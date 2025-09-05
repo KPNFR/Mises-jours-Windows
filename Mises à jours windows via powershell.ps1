@@ -1,38 +1,28 @@
-# Vérifie si le script est exécuté en tant qu'administrateur
-If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
-    [Security.Principal.WindowsBuiltInRole]::Administrator))
-{
+# Vérifie l'exécution en admin
+If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Warning "Ce script doit être exécuté en tant qu'administrateur."
     Break
 }
 
-Write-Host "Début du script de mise à jour Windows via PowerShell" -ForegroundColor Cyan
+Write-Host "Début du script de mise à jour Windows..." -ForegroundColor Cyan
 
-# Étape 1 : Installer le module PSWindowsUpdate
-Write-Host "Installation du module PSWindowsUpdate..." -ForegroundColor Yellow
+# Installer et importer le module
 Install-Module -Name PSWindowsUpdate -Force -Confirm:$false
-
-# Étape 2 : Définir la stratégie d'exécution pour ce processus
-Write-Host "Définition de la stratégie d'exécution à RemoteSigned (temporaire)..." -ForegroundColor Yellow
 Set-ExecutionPolicy RemoteSigned -Scope Process -Force
-
-# Étape 3 : Importer le module
-Write-Host "Importation du module PSWindowsUpdate..." -ForegroundColor Yellow
 Import-Module PSWindowsUpdate -Force -Verbose
 
-# Étape 4 : Boucle pour installer toutes les mises à jour disponibles
 do {
-    Write-Host "`Recherche des mises à jour disponibles..." -ForegroundColor Green
-    # Inclut les mises à jour facultatives
-    $updates = Get-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreUserInput -Category "Updates","OptionalUpdates"
+    # Récupérer toutes les mises à jour disponibles
+    $updates = Get-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreUserInput -Category "Updates","OptionalUpdates" -Verbose
 
-    if ($updates) {
-        Write-Host "`nInstallation des mises à jour disponibles..." -ForegroundColor Green
-        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreReboot -Verbose -Category "Updates","OptionalUpdates"
-        Write-Host "Redémarrage si nécessaire..." -ForegroundColor Yellow
+    if ($updates.Count -gt 0) {
+        # Installer toutes les mises à jour
+        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreReboot -Category "Updates","OptionalUpdates" -Verbose
+        Write-Host "Mises à jour installées. Redémarrage si nécessaire..."
         Restart-Computer -Force
-        Start-Sleep -Seconds 60  # Attend le redémarrage et la reprise
+        Start-Sleep -Seconds 60
     }
-} while (Get-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreUserInput -Category "Updates","OptionalUpdates")
 
-Write-Host "`nToutes les mises à jour sont installées. Le système peut redémarrer automatiquement si nécessaire." -ForegroundColor Cyan
+} while ($updates.Count -gt 0)
+
+Write-Host "Toutes les mises à jour ont été installées." -ForegroundColor Cyan
