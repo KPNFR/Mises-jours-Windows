@@ -20,12 +20,18 @@ Set-ExecutionPolicy RemoteSigned -Scope Process -Force
 Write-Host "Importation du module PSWindowsUpdate..." -ForegroundColor Yellow
 Import-Module PSWindowsUpdate -Force -Verbose
 
-# Étape 4 : Vérifier les mises à jour disponibles
-Write-Host "`nRecherche des mises à jour disponibles..." -ForegroundColor Green
-Get-WindowsUpdate
+# Étape 4 : Boucle pour installer toutes les mises à jour disponibles
+do {
+    Write-Host "`nRecherche des mises à jour disponibles..." -ForegroundColor Green
+    $updates = Get-WindowsUpdate -MicrosoftUpdate -IgnoreUserInput -AcceptAll
 
-# Étape 5 : Installer toutes les mises à jour disponibles et redémarrer si nécessaire
-Write-Host "`nInstallation des mises à jour disponibles (avec redémarrage automatique si nécessaire)..." -ForegroundColor Green
-Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -AutoReboot
+    if ($updates) {
+        Write-Host "`nInstallation des mises à jour disponibles..." -ForegroundColor Green
+        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreReboot -Verbose
+        Write-Host "Redémarrage si nécessaire..." -ForegroundColor Yellow
+        Restart-Computer -Force
+        Start-Sleep -Seconds 60  # Attend le redémarrage et la reprise
+    }
+} while (Get-WindowsUpdate -MicrosoftUpdate -IgnoreUserInput -AcceptAll)
 
-Write-Host "`nScript terminé. Le système peut redémarrer automatiquement si nécessaire." -ForegroundColor Cyan
+Write-Host "`nToutes les mises à jour sont installées. Le système peut redémarrer automatiquement si nécessaire." -ForegroundColor Cyan
