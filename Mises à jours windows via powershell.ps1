@@ -8,14 +8,21 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 Write-Host "Début du script de mise à jour Windows via PowerShell" -ForegroundColor Cyan
 
-# Installer et importer le module PSWindowsUpdate
+# Étape 1 : Installer le module PSWindowsUpdate
+Write-Host "Installation du module PSWindowsUpdate..." -ForegroundColor Yellow
 Install-Module -Name PSWindowsUpdate -Force -Confirm:$false
+
+# Étape 2 : Définir la stratégie d'exécution pour ce processus
+Write-Host "Définition de la stratégie d'exécution à RemoteSigned (temporaire)..." -ForegroundColor Yellow
 Set-ExecutionPolicy RemoteSigned -Scope Process -Force
+
+# Étape 3 : Importer le module
+Write-Host "Importation du module PSWindowsUpdate..." -ForegroundColor Yellow
 Import-Module PSWindowsUpdate -Force -Verbose
 
-# Boucle pour installer toutes les mises à jour importantes et facultatives
+# Étape 4 : Boucle pour installer toutes les mises à jour disponibles
 do {
-    Write-Host "`nRecherche des mises à jour disponibles..." -ForegroundColor Green
+    Write-Host "`Recherche des mises à jour disponibles..." -ForegroundColor Green
     # Inclut les mises à jour facultatives
     $updates = Get-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreUserInput -Category "Updates","OptionalUpdates"
 
@@ -24,8 +31,8 @@ do {
         Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreReboot -Verbose -Category "Updates","OptionalUpdates"
         Write-Host "Redémarrage si nécessaire..." -ForegroundColor Yellow
         Restart-Computer -Force
-        Start-Sleep -Seconds 60
+        Start-Sleep -Seconds 60  # Attend le redémarrage et la reprise
     }
 } while (Get-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreUserInput -Category "Updates","OptionalUpdates")
 
-Write-Host "`nToutes les mises à jour, y compris facultatives, sont installées. Le système peut redémarrer automatiquement si nécessaire." -ForegroundColor Cyan
+Write-Host "`nToutes les mises à jour sont installées. Le système peut redémarrer automatiquement si nécessaire." -ForegroundColor Cyan
