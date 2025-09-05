@@ -6,18 +6,18 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 Write-Host "Début du script de mise à jour Windows..." -ForegroundColor Cyan
 
-# Installer et importer le module
+# Installer et importer le module PSWindowsUpdate
 Install-Module -Name PSWindowsUpdate -Force -Confirm:$false
 Set-ExecutionPolicy RemoteSigned -Scope Process -Force
 Import-Module PSWindowsUpdate -Force -Verbose
 
 do {
     # Récupérer toutes les mises à jour disponibles
-    $updates = Get-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreUserInput -Category "Updates","OptionalUpdates" -Verbose
+    $updates = Get-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreUserInput -Category "Updates","OptionalUpdates","FeatureUpdates","SecurityUpdates" -Verbose
 
     if ($updates.Count -gt 0) {
-        # Installer toutes les mises à jour
-        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreReboot -Category "Updates","OptionalUpdates" -Verbose
+        # Installer toutes les mises à jour, même celles déjà téléchargées
+        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreReboot -IgnoreUserInput -Category "Updates","OptionalUpdates","FeatureUpdates","SecurityUpdates" -Verbose
         Write-Host "Mises à jour installées. Redémarrage si nécessaire..."
         Restart-Computer -Force
         Start-Sleep -Seconds 60
