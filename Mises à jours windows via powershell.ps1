@@ -1,28 +1,31 @@
-# Vérifie l'exécution en admin
-If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+# Vérifie si le script est exécuté en tant qu'administrateur
+If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
+    [Security.Principal.WindowsBuiltInRole]::Administrator))
+{
     Write-Warning "Ce script doit être exécuté en tant qu'administrateur."
     Break
 }
 
-Write-Host "Début du script de mise à jour Windows..." -ForegroundColor Cyan
+Write-Host "Début du script de mise à jour Windows via PowerShell" -ForegroundColor Cyan
 
-# Installer et importer le module PSWindowsUpdate
+# Étape 1 : Installer le module PSWindowsUpdate
+Write-Host "Installation du module PSWindowsUpdate..." -ForegroundColor Yellow
 Install-Module -Name PSWindowsUpdate -Force -Confirm:$false
+
+# Étape 2 : Définir la stratégie d'exécution pour ce processus
+Write-Host "Définition de la stratégie d'exécution à RemoteSigned (temporaire)..." -ForegroundColor Yellow
 Set-ExecutionPolicy RemoteSigned -Scope Process -Force
+
+# Étape 3 : Importer le module
+Write-Host "Importation du module PSWindowsUpdate..." -ForegroundColor Yellow
 Import-Module PSWindowsUpdate -Force -Verbose
 
-do {
-    # Récupérer toutes les mises à jour disponibles
-    $updates = Get-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreUserInput -Category "Updates","OptionalUpdates","FeatureUpdates","SecurityUpdates" -Verbose
+# Étape 4 : Vérifier les mises à jour disponibles
+Write-Host "`nRecherche des mises à jour disponibles..." -ForegroundColor Green
+Get-WindowsUpdate
 
-    if ($updates.Count -gt 0) {
-        # Installer toutes les mises à jour, même celles déjà téléchargées
-        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -IgnoreReboot -IgnoreUserInput -Category "Updates","OptionalUpdates","FeatureUpdates","SecurityUpdates" -Verbose
-        Write-Host "Mises à jour installées. Redémarrage si nécessaire..."
-        Restart-Computer -Force
-        Start-Sleep -Seconds 60
-    }
+# Étape 5 : Installer toutes les mises à jour disponibles et redémarrer si nécessaire
+Write-Host "`nInstallation des mises à jour disponibles (avec redémarrage automatique si nécessaire)..." -ForegroundColor Green
+Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -AutoReboot
 
-} while ($updates.Count -gt 0)
-
-Write-Host "Toutes les mises à jour ont été installées." -ForegroundColor Cyan
+Write-Host "`nScript terminé. Le système peut redémarrer automatiquement si nécessaire." -ForegroundColor Cyan
